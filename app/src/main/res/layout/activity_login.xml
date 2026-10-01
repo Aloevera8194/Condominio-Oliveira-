@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cadastro Facial"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Entre com a sua conta" />
+
+        <EditText
+            android:id="@+id/editServidor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Endereço do servidor"
+            android:inputType="textUri" />
+
+        <EditText
+            android:id="@+id/editLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Login"
+            android:inputType="textNoSuggestions" />
+
+        <EditText
+            android:id="@+id/editSenha"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Senha"
+            android:inputType="textPassword" />
+
+        <TextView
+            android:id="@+id/textErro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="#B00020"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnEntrar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Entrar" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>
