@@ -58,10 +58,10 @@ class MainActivity : AppCompatActivity() {
         val todos = listOf(
             Tile("Pessoas", "👥", "#0078D7", "ver_pessoas", true) { emBreve("Pessoas") },
             Tile("Meu apartamento", "🏠", "#00A300", "meu_apartamento", true) { emBreve("Meu apartamento") },
-            Tile("Usuários", "🔑", "#9B4F96", "criar_usuario", false) { emBreve("Usuários") },
+            Tile("Usuários", "🔑", "#9B4F96", "criar_usuario", false) { startActivity(android.content.Intent(this, UsuariosActivity::class.java)) },
             Tile("Abrir porta", "🚪", "#E3A21A", "abrir_porta", false) { emBreve("Abrir porta") },
             Tile("Câmeras", "📷", "#B91D47", "ver_camera", false) { emBreve("Câmeras") },
-            Tile("Sair", "⏻", "#555555", null, false) { confirmarSaida() }
+            Tile("Sair", "🔒", "#555555", null, false) { confirmarSaida() }
         )
         val perms = permissoes(sessao)
         val visiveis = todos.filter { it.permissao == null || it.permissao in perms }
