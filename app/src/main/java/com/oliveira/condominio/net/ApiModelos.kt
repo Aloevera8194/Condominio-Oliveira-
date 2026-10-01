@@ -27,6 +27,7 @@ data class UnidadeApi(val id: Long, val predioId: Long, val identificador: Strin
 data class PessoaApi(
     val id: Long = 0,
     val unidadeId: Long,
+    val unidades: List<Long> = emptyList(),
     val nome: String,
     val telefone: String? = null,
     val cpf: String? = null,
@@ -40,6 +41,7 @@ data class PessoaApi(
         fun v(s: String?): Any = if (s.isNullOrBlank()) JSONObject.NULL else s
         return JSONObject()
             .put("unidade_id", unidadeId)
+            .put("unidades", org.json.JSONArray(if (unidades.isEmpty()) listOf(unidadeId) else unidades))
             .put("nome", nome)
             .put("telefone", v(telefone))
             .put("cpf", v(cpf))
@@ -52,6 +54,7 @@ data class PessoaApi(
         fun de(o: JSONObject) = PessoaApi(
             id = o.getLong("id"),
             unidadeId = o.optLong("unidade_id"),
+            unidades = o.optJSONArray("unidades")?.let { a -> (0 until a.length()).map { a.getLong(it) } } ?: emptyList(),
             nome = o.optString("nome"),
             telefone = o.str("telefone"),
             cpf = o.str("cpf"),

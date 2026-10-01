@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val todos = listOf(
-            Tile("Pessoas", "👥", "#0078D7", "ver_pessoas", true) { emBreve("Pessoas") },
+            Tile("Pessoas", "👥", "#0078D7", "ver_pessoas", true) { startActivity(android.content.Intent(this, PessoasActivity::class.java)) },
             Tile("Meu apartamento", "🏠", "#00A300", "meu_apartamento", true) { emBreve("Meu apartamento") },
             Tile("Usuários", "🔑", "#9B4F96", "criar_usuario", false) { startActivity(android.content.Intent(this, UsuariosActivity::class.java)) },
             Tile("Abrir porta", "🚪", "#E3A21A", "abrir_porta", false) { emBreve("Abrir porta") },
