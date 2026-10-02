@@ -112,6 +112,11 @@ class PessoasActivity : AppCompatActivity() {
         carregarPredios()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::spUnidade.isInitialized && unidadeAtual() != null) carregarPessoas()
+    }
+
     private fun carregarPredios() = rodar {
         predios = ApiClient(this).predios()
         spPredio.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, predios.map { it.nome })
@@ -129,7 +134,6 @@ class PessoasActivity : AppCompatActivity() {
 
     private fun carregarPessoas() {
         val u = unidadeAtual() ?: return
-        textMsg.visibility = View.GONE
         rodar {
             val pessoas = ApiClient(this).pessoas(u.id)
             lista.removeAllViews()
@@ -304,8 +308,8 @@ class PessoasActivity : AppCompatActivity() {
                     }
                 }
                 dlg.dismiss()
-                mostrar("Pessoa salva$aviso", aviso.isNotEmpty())
                 carregarPessoas()
+                mostrar("Pessoa salva$aviso", aviso.isNotEmpty())
             }
         }
     }
