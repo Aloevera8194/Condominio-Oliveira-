@@ -95,16 +95,21 @@ class PessoasActivity : AppCompatActivity() {
         raiz.setPadding(dp(20), dp(24), dp(20), dp(24))
 
         val titulo = TextView(this)
-        titulo.text = "Pessoas"
+        titulo.text = if (sessao.perfil == "morador") "Meu apartamento" else "Pessoas"
         titulo.textSize = 24f
         raiz.addView(titulo)
 
         spPredio = Spinner(this)
         spUnidade = Spinner(this)
-        raiz.addView(TextView(this).apply { text = "Prédio" })
+        val tPredio = TextView(this).apply { text = "Prédio" }
+        val tUnidade = TextView(this).apply { text = "Unidade" }
+        raiz.addView(tPredio)
         raiz.addView(spPredio)
-        raiz.addView(TextView(this).apply { text = "Unidade" })
+        raiz.addView(tUnidade)
         raiz.addView(spUnidade)
+        if (sessao.perfil == "morador") {
+            listOf(tPredio, spPredio, tUnidade, spUnidade).forEach { it.visibility = View.GONE }
+        }
 
         if (sessao.perfil != "portaria") {
             val b = Button(this)
@@ -149,7 +154,12 @@ class PessoasActivity : AppCompatActivity() {
     private fun carregarUnidades() {
         val p = predios.getOrNull(spPredio.selectedItemPosition) ?: return
         rodar {
-            unidades = ApiClient(this).unidades(p.id)
+            val todas = ApiClient(this).unidades(p.id)
+            val s = SessaoStorage(this)
+            val minhas = s.usuario()?.optJSONArray("unidades")
+                ?.let { a -> (0 until a.length()).map { a.getLong(it) } } ?: emptyList()
+            unidades = if (s.perfil == "morador" && minhas.isNotEmpty())
+                todas.filter { it.id in minhas } else todas
             spUnidade.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, unidades.map { it.identificador })
             if (unidades.isEmpty()) lista.removeAllViews()
         }
@@ -308,7 +318,7 @@ class PessoasActivity : AppCompatActivity() {
 
         val checks = mutableListOf<CheckBox>()
         val outros = predios.filter { it.id != u.predioId }
-        if (editar == null && outros.isNotEmpty()) {
+        if (editar == null && outros.isNotEmpty() && SessaoStorage(this).perfil != "morador") {
             form.addView(TextView(this).apply { text = "Também liberar nos condomínios:"; setPadding(0, dp(12), 0, 0) })
             outros.forEach { p ->
                 val cb = CheckBox(this)
