@@ -33,6 +33,29 @@ class PessoasActivity : AppCompatActivity() {
         if (uri != null) aoEscolherFoto?.invoke(uri)
     }
 
+    private var uriCamera: Uri? = null
+    private val tirarFoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (ok) uriCamera?.let { aoEscolherFoto?.invoke(it) }
+    }
+
+    private fun abrirCamera() {
+        val pasta = java.io.File(cacheDir, "fotos").apply { mkdirs() }
+        val arq = java.io.File.createTempFile("foto_", ".jpg", pasta)
+        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", arq)
+        uriCamera = uri
+        tirarFoto.launch(uri)
+    }
+
+    private fun escolherOrigem(aoEscolher: (Uri) -> Unit) {
+        aoEscolherFoto = aoEscolher
+        AlertDialog.Builder(this)
+            .setTitle("Foto")
+            .setItems(arrayOf("Tirar foto", "Escolher da galeria")) { _, i ->
+                if (i == 0) abrirCamera() else escolherFoto.launch("image/*")
+            }
+            .show()
+    }
+
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun unidadeAtual() = unidades.getOrNull(spUnidade.selectedItemPosition)
     private fun fmt(s: String) = s.take(10).split("-").reversed().joinToString("/")
@@ -166,14 +189,13 @@ class PessoasActivity : AppCompatActivity() {
     private fun opcoes(p: PessoaApi) {
         AlertDialog.Builder(this)
             .setTitle(p.nome)
-            .setItems(arrayOf("Trocar foto", "Excluir")) { _, i ->
-                if (i == 0) {
-                    aoEscolherFoto = { uri ->
+            .setItems(arrayOf("Editar dados", "Trocar foto", "Excluir")) { _, i ->
+                when (i) {
+                    0 -> novaPessoa(p)
+                    1 -> escolherOrigem { uri ->
                         rodar { enviarFoto(p.id, uri, p.temFoto); carregarPessoas() }
                     }
-                    escolherFoto.launch("image/*")
-                } else {
-                    AlertDialog.Builder(this)
+                    else -> AlertDialog.Builder(this)
                         .setTitle("Excluir ${p.nome}?")
                         .setPositiveButton("Excluir") { _, _ ->
                             rodar { ApiClient(this).excluirPessoa(p.id); carregarPessoas() }
@@ -186,10 +208,40 @@ class PessoasActivity : AppCompatActivity() {
     }
 
     private suspend fun enviarFoto(id: Long, uri: Uri, atualizar: Boolean) {
-        val bytes = withContext(Dispatchers.IO) {
-            contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        } ?: throw ApiException(0, "Não consegui ler a foto")
-        ApiClient(this).enviarFoto(id, bytes, atualizar, contentResolver.getType(uri) ?: "image/jpeg")
+        val bytes = withContext(Dispatchers.IO) { prepararFoto(uri) }
+            ?: throw ApiException(0, "Não consegui ler a foto")
+        ApiClient(this).enviarFoto(id, bytes, atualizar, "image/jpeg")
+    }
+
+    private fun prepararFoto(uri: Uri): ByteArray? {
+        val original = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        val opt = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeByteArray(original, 0, original.size, opt)
+        var amostra = 1
+        while (maxOf(opt.outWidth, opt.outHeight) / amostra > 1600) amostra *= 2
+        val bmp = android.graphics.BitmapFactory.decodeByteArray(
+            original, 0, original.size,
+            android.graphics.BitmapFactory.Options().apply { inSampleSize = amostra }
+        ) ?: return original
+        val exif = androidx.exifinterface.media.ExifInterface(java.io.ByteArrayInputStream(original))
+        val graus = when (exif.getAttributeInt(
+            androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
+        )) {
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> 0f
+        }
+        val final = if (graus != 0f) {
+            android.graphics.Bitmap.createBitmap(
+                bmp, 0, 0, bmp.width, bmp.height,
+                android.graphics.Matrix().apply { postRotate(graus) }, true
+            )
+        } else bmp
+        val out = java.io.ByteArrayOutputStream()
+        final.compress(android.graphics.Bitmap.CompressFormat.JPEG, 88, out)
+        return out.toByteArray()
     }
 
     private fun escolherData(ok: (String) -> Unit) {
@@ -198,7 +250,7 @@ class PessoasActivity : AppCompatActivity() {
             c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
     }
 
-    private fun novaPessoa() {
+    private fun novaPessoa(editar: PessoaApi? = null) {
         val u = unidadeAtual() ?: run { mostrar("Escolha uma unidade.", true); return }
         val tipos = if (u.tipo.equals("condominio", true))
             listOf("funcionario_predio", "prestador")
@@ -211,29 +263,39 @@ class PessoasActivity : AppCompatActivity() {
         val eNome = EditText(this).apply {
             hint = "Nome completo"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            setText(editar?.nome ?: "")
         }
         val spTipo = Spinner(this).apply {
             adapter = ArrayAdapter(this@PessoasActivity, android.R.layout.simple_spinner_dropdown_item, tipos)
         }
-        val eTel = EditText(this).apply { hint = "Telefone com DDD"; inputType = InputType.TYPE_CLASS_PHONE }
-        val eCpf = EditText(this).apply { hint = "CPF (só números)"; inputType = InputType.TYPE_CLASS_NUMBER }
+        editar?.let { val i = tipos.indexOf(it.tipo); if (i >= 0) spTipo.setSelection(i) }
+        val eTel = EditText(this).apply {
+            hint = "Telefone com DDD"
+            inputType = InputType.TYPE_CLASS_PHONE
+            setText(editar?.telefone ?: "")
+        }
+        val eCpf = EditText(this).apply {
+            hint = "CPF (só números)"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(editar?.cpf ?: "")
+        }
 
-        var inicio = "%04d-%02d-%02d".format(
-            Calendar.getInstance().get(Calendar.YEAR),
-            Calendar.getInstance().get(Calendar.MONTH) + 1,
-            Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+        val hoje = Calendar.getInstance()
+        var inicio = editar?.inicioValidade?.take(10) ?: "%04d-%02d-%02d".format(
+            hoje.get(Calendar.YEAR), hoje.get(Calendar.MONTH) + 1, hoje.get(Calendar.DAY_OF_MONTH)
         )
-        var fim = ""
+        var fim = editar?.fimValidade?.take(10) ?: ""
         var fotoUri: Uri? = null
 
         val bIni = Button(this).apply { text = "Início: ${fmt(inicio)}" }
-        val bFim = Button(this).apply { text = "Fim: escolher (obrigatório p/ locatário, visitante, prestador)" }
-        val bFoto = Button(this).apply { text = "Escolher foto" }
+        val bFim = Button(this).apply {
+            text = if (fim.isEmpty()) "Fim: escolher (obrigatório p/ locatário, visitante, prestador)" else "Fim: ${fmt(fim)}"
+        }
+        val bFoto = Button(this).apply { text = if (editar != null) "Trocar foto (opcional)" else "Escolher foto" }
         bIni.setOnClickListener { escolherData { inicio = it; bIni.text = "Início: ${fmt(it)}" } }
         bFim.setOnClickListener { escolherData { fim = it; bFim.text = "Fim: ${fmt(it)}" } }
         bFoto.setOnClickListener {
-            aoEscolherFoto = { uri -> fotoUri = uri; bFoto.text = "Foto escolhida ✓" }
-            escolherFoto.launch("image/*")
+            escolherOrigem { uri -> fotoUri = uri; bFoto.text = "Foto escolhida ✓" }
         }
 
         form.addView(eNome)
@@ -246,7 +308,7 @@ class PessoasActivity : AppCompatActivity() {
 
         val checks = mutableListOf<CheckBox>()
         val outros = predios.filter { it.id != u.predioId }
-        if (outros.isNotEmpty()) {
+        if (editar == null && outros.isNotEmpty()) {
             form.addView(TextView(this).apply { text = "Também liberar nos condomínios:"; setPadding(0, dp(12), 0, 0) })
             outros.forEach { p ->
                 val cb = CheckBox(this)
@@ -261,7 +323,7 @@ class PessoasActivity : AppCompatActivity() {
         form.addView(tErro)
 
         val dlg = AlertDialog.Builder(this)
-            .setTitle("Nova pessoa")
+            .setTitle(if (editar != null) "Editar pessoa" else "Nova pessoa")
             .setView(ScrollView(this).apply { addView(form) })
             .setPositiveButton("Salvar", null)
             .setNegativeButton("Cancelar", null)
@@ -281,26 +343,31 @@ class PessoasActivity : AppCompatActivity() {
             tErro.text = ""
             rodar({ msg -> tErro.text = msg; btn.isEnabled = true }) {
                 val api = ApiClient(this)
-                val ids = mutableListOf(u.id)
-                for (pid in marcados) {
-                    api.unidades(pid).firstOrNull { it.tipo.equals("condominio", true) }?.let { ids.add(it.id) }
+                val ids = mutableListOf<Long>()
+                if (editar != null) {
+                    ids.addAll(editar.unidades.ifEmpty { listOf(u.id) })
+                } else {
+                    ids.add(u.id)
+                    for (pid in marcados) {
+                        api.unidades(pid).firstOrNull { it.tipo.equals("condominio", true) }?.let { ids.add(it.id) }
+                    }
                 }
-                val id = api.criarPessoa(
-                    PessoaApi(
-                        unidadeId = u.id,
-                        unidades = ids,
-                        nome = nome,
-                        telefone = eTel.text.toString().trim().ifEmpty { null },
-                        cpf = eCpf.text.toString().trim().ifEmpty { null },
-                        tipo = tipo,
-                        inicioValidade = inicio,
-                        fimValidade = fim.ifEmpty { null }
-                    )
+                val dados = PessoaApi(
+                    id = editar?.id ?: 0,
+                    unidadeId = u.id,
+                    unidades = ids,
+                    nome = nome,
+                    telefone = eTel.text.toString().trim().ifEmpty { null },
+                    cpf = eCpf.text.toString().trim().ifEmpty { null },
+                    tipo = tipo,
+                    inicioValidade = inicio,
+                    fimValidade = fim.ifEmpty { null }
                 )
+                val id = if (editar != null) { api.atualizarPessoa(dados); editar.id } else api.criarPessoa(dados)
                 var aviso = ""
                 fotoUri?.let {
                     try {
-                        enviarFoto(id, it, false)
+                        enviarFoto(id, it, editar?.temFoto ?: false)
                     } catch (e: SessaoExpiradaException) {
                         throw e
                     } catch (e: Exception) {
@@ -309,7 +376,7 @@ class PessoasActivity : AppCompatActivity() {
                 }
                 dlg.dismiss()
                 carregarPessoas()
-                mostrar("Pessoa salva$aviso", aviso.isNotEmpty())
+                mostrar((if (editar != null) "Pessoa atualizada" else "Pessoa salva") + aviso, aviso.isNotEmpty())
             }
         }
     }
