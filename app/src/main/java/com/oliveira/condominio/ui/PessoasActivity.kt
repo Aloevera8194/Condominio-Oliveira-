@@ -199,8 +199,9 @@ class PessoasActivity : AppCompatActivity() {
     private fun opcoes(p: PessoaApi) {
         AlertDialog.Builder(this)
             .setTitle(p.nome)
-            .setItems(arrayOf("Editar dados", "Trocar foto", "Excluir")) { _, i ->
+            .setItems(arrayOf("Editar dados", "Trocar foto", "Excluir", "Enviar aos leitores")) { _, i ->
                 when (i) {
+                    3 -> enviarAosLeitores(p)
                     0 -> novaPessoa(p)
                     1 -> escolherOrigem { uri ->
                         rodar { enviarFoto(p.id, uri, p.temFoto); carregarPessoas() }
@@ -214,6 +215,44 @@ class PessoasActivity : AppCompatActivity() {
                         .show()
                 }
             }
+            .show()
+    }
+
+    private fun enviarAosLeitores(p: PessoaApi) {
+        if (!p.temFoto) {
+            mostrar("${p.nome} está sem foto. Envie uma foto antes de mandar aos leitores.", true)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Enviar ${p.nome}?")
+            .setMessage("Cadastra usuário, cartão e foto em todos os leitores ativos do prédio.")
+            .setPositiveButton("Enviar") { _, _ ->
+                rodar {
+                    mostrar("Enviando aos leitores...", false)
+                    val r = ApiClient(this).enviarAosEquipamentos(p.id)
+                    val res = r.optJSONArray("resultados")
+                    val linhas = StringBuilder()
+                    if (res != null) for (i in 0 until res.length()) {
+                        val o = res.getJSONObject(i)
+                        val ok = o.optString("status") == "enviado"
+                        linhas.append(if (ok) "✓ " else "✗ ")
+                            .append(o.optString("equipamento"))
+                        if (ok) linhas.append("  (código ${o.optString("employee_no")})")
+                        else linhas.append("\n   ").append(o.optString("mensagem"))
+                        linhas.append("\n")
+                    }
+                    if (linhas.isEmpty()) linhas.append("Nenhum leitor ativo neste prédio.")
+                    val erros = r.optInt("erros", 0)
+                    mostrar(if (erros == 0) "Enviado a ${r.optInt("enviados", 0)} leitor(es)." else "$erros leitor(es) com erro.", erros > 0)
+                    AlertDialog.Builder(this)
+                        .setTitle("Resultado")
+                        .setMessage(linhas.toString())
+                        .setPositiveButton("OK", null)
+                        .setNeutralButton("Tentar de novo") { _, _ -> enviarAosLeitores(p) }
+                        .show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
             .show()
     }
 
