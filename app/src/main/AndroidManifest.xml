@@ -27,6 +27,8 @@
         <activity android:name=".ui.PrediosActivity" android:exported="false" />
         <activity android:name=".ui.EquipamentosActivity" android:exported="false" />
         <activity android:name=".ui.AbrirPortaActivity" android:exported="false" />
+        <activity android:name=".ui.CamerasActivity" android:exported="false" />
+        <activity android:name=".ui.CameraViewActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

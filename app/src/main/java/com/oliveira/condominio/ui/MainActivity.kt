@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             Tile("Usuários", "🔑", "#9B4F96", "criar_usuario", false) { startActivity(android.content.Intent(this, UsuariosListaActivity::class.java)) },
             Tile("Prédios", "🏢", "#008299", "gerenciar_predios", false) { startActivity(android.content.Intent(this, PrediosActivity::class.java)) },
             Tile("Abrir porta", "🚪", "#E3A21A", "abrir_porta", false) { startActivity(android.content.Intent(this, AbrirPortaActivity::class.java)) },
-            Tile("Câmeras", "📷", "#B91D47", "ver_camera", false) { emBreve("Câmeras") },
+            Tile("Câmeras", "📷", "#B91D47", "ver_camera", false) { startActivity(android.content.Intent(this, CamerasActivity::class.java)) },
             Tile("Sair", "🔒", "#555555", null, false) { confirmarSaida() }
         )
         val perms = permissoes(sessao) +
