@@ -25,6 +25,8 @@
         <activity android:name=".ui.UsuariosListaActivity" android:exported="false" />
         <activity android:name=".ui.PessoasActivity" android:exported="false" />
         <activity android:name=".ui.PrediosActivity" android:exported="false" />
+        <activity android:name=".ui.EquipamentosActivity" android:exported="false" />
+        <activity android:name=".ui.AbrirPortaActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

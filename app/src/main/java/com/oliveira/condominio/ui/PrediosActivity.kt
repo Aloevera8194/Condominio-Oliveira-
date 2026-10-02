@@ -98,16 +98,24 @@ class PrediosActivity : AppCompatActivity() {
     }
 
     private fun opcoes(p: PredioApi) {
-        val admin = SessaoStorage(this).perfil == "admin"
-        val itens = if (admin) arrayOf("Ver unidades", "Nova unidade", "Editar prédio", "Excluir prédio")
-                    else arrayOf("Ver unidades", "Nova unidade")
+        val perfil = SessaoStorage(this).perfil
+        val admin = perfil == "admin"
+        val itens = mutableListOf("Ver unidades", "Nova unidade")
+        if (admin || perfil == "sindico") itens.add("Equipamentos")
+        if (admin) { itens.add("Editar prédio"); itens.add("Excluir prédio") }
         AlertDialog.Builder(this)
             .setTitle(p.nome)
-            .setItems(itens) { _, i ->
-                when (i) {
-                    0 -> verUnidades(p)
-                    1 -> novaUnidade(p)
-                    2 -> editarPredio(p)
+            .setItems(itens.toTypedArray()) { _, i ->
+                when (itens[i]) {
+                    "Ver unidades" -> verUnidades(p)
+                    "Nova unidade" -> novaUnidade(p)
+                    "Equipamentos" -> {
+                        val it = android.content.Intent(this, EquipamentosActivity::class.java)
+                        it.putExtra(EquipamentosActivity.EXTRA_PREDIO_ID, p.id)
+                        it.putExtra(EquipamentosActivity.EXTRA_PREDIO_NOME, p.nome)
+                        startActivity(it)
+                    }
+                    "Editar prédio" -> editarPredio(p)
                     else -> excluirPredio(p)
                 }
             }
