@@ -24,7 +24,7 @@ fun voltarAoLogin(context: Context) {
 class ApiClient(context: Context) {
     private val sessao = SessaoStorage(context.applicationContext)
 
-    private fun chamar(
+    internal fun chamar(
         metodo: String,
         rota: String,
         corpo: ByteArray? = null,
