@@ -116,6 +116,7 @@ class CamerasActivity : AppCompatActivity() {
         val i = Intent(this, CameraViewActivity::class.java)
         i.putExtra(CameraViewActivity.EXTRA_ID, c.id)
         i.putExtra(CameraViewActivity.EXTRA_NOME, c.nome)
+        i.putExtra(CameraViewActivity.EXTRA_PREDIO_ID, c.predioId)
         startActivity(i)
     }
 
