@@ -98,22 +98,114 @@ class PrediosActivity : AppCompatActivity() {
     }
 
     private fun opcoes(p: PredioApi) {
+        val admin = SessaoStorage(this).perfil == "admin"
+        val itens = if (admin) arrayOf("Ver unidades", "Nova unidade", "Editar prédio", "Excluir prédio")
+                    else arrayOf("Ver unidades", "Nova unidade")
         AlertDialog.Builder(this)
             .setTitle(p.nome)
-            .setItems(arrayOf("Ver unidades", "Nova unidade")) { _, i ->
-                if (i == 0) verUnidades(p) else novaUnidade(p)
+            .setItems(itens) { _, i ->
+                when (i) {
+                    0 -> verUnidades(p)
+                    1 -> novaUnidade(p)
+                    2 -> editarPredio(p)
+                    else -> excluirPredio(p)
+                }
             }
+            .show()
+    }
+
+    private fun editarPredio(p: PredioApi) {
+        val form = LinearLayout(this)
+        form.orientation = LinearLayout.VERTICAL
+        form.setPadding(dp(20), dp(12), dp(20), 0)
+        val eNome = EditText(this).apply { setText(p.nome); hint = "Nome do prédio" }
+        val eEnd = EditText(this).apply { setText(p.endereco ?: ""); hint = "Endereço" }
+        form.addView(eNome)
+        form.addView(eEnd)
+        AlertDialog.Builder(this)
+            .setTitle("Editar prédio")
+            .setView(form)
+            .setPositiveButton("Salvar") { _, _ ->
+                val nome = eNome.text.toString().trim()
+                if (nome.isEmpty()) { mostrar("Informe o nome.", true); return@setPositiveButton }
+                rodar {
+                    ApiClient(this).atualizarPredio(p.id, nome, eEnd.text.toString().trim().ifEmpty { null })
+                    mostrar("Prédio atualizado.", false)
+                    carregar()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun excluirPredio(p: PredioApi) {
+        AlertDialog.Builder(this)
+            .setTitle("Excluir ${p.nome}?")
+            .setMessage("O servidor recusa se houver pessoas, equipamentos, câmeras ou usuários ligados.")
+            .setPositiveButton("Excluir") { _, _ ->
+                rodar {
+                    ApiClient(this).excluirPredio(p.id)
+                    mostrar("Prédio excluído.", false)
+                    carregar()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun verUnidades(p: PredioApi) = rodar {
         val un = ApiClient(this).unidades(p.id)
-        val texto = if (un.isEmpty()) "Nenhuma unidade."
-        else un.joinToString("\n") { "${it.identificador}  (${it.tipo})" }
+        if (un.isEmpty()) {
+            AlertDialog.Builder(this).setTitle("Unidades de ${p.nome}")
+                .setMessage("Nenhuma unidade.").setPositiveButton("Fechar", null).show()
+            return@rodar
+        }
+        val nomes = un.map { "${it.identificador}  (${it.tipo})" }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle("Unidades de ${p.nome}")
-            .setMessage(texto)
+            .setItems(nomes) { _, i -> opcoesUnidade(p, un[i]) }
             .setPositiveButton("Fechar", null)
+            .show()
+    }
+
+    private fun opcoesUnidade(p: PredioApi, u: UnidadeApi) {
+        if (u.tipo.equals("condominio", true)) {
+            mostrar("A unidade CONDOMINIO não pode ser renomeada nem excluída.", true)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Unidade ${u.identificador}")
+            .setItems(arrayOf("Renomear", "Excluir")) { _, i ->
+                if (i == 0) {
+                    val e = EditText(this).apply { setText(u.identificador) }
+                    AlertDialog.Builder(this)
+                        .setTitle("Renomear unidade")
+                        .setView(e)
+                        .setPositiveButton("Salvar") { _, _ ->
+                            val nv = e.text.toString().trim()
+                            if (nv.isNotEmpty()) rodar {
+                                ApiClient(this).atualizarUnidade(u.id, nv)
+                                mostrar("Unidade renomeada para \"$nv\".", false)
+                                verUnidades(p)
+                            }
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    AlertDialog.Builder(this)
+                        .setTitle("Excluir unidade ${u.identificador}?")
+                        .setMessage("O servidor recusa se houver pessoas, usuários ou pets ligados.")
+                        .setPositiveButton("Excluir") { _, _ ->
+                            rodar {
+                                ApiClient(this).excluirUnidade(u.id)
+                                mostrar("Unidade excluída.", false)
+                                verUnidades(p)
+                            }
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                }
+            }
             .show()
     }
 
