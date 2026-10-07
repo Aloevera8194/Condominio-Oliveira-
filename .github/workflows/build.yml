@@ -22,6 +22,17 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Gerar configuração do servidor (segredos)
+        run: |
+          cat > app/src/main/java/com/oliveira/condominio/net/Segredos.kt <<'KT'
+          package com.oliveira.condominio.net
+
+          object Segredos {
+              const val EXTERNO = "${{ secrets.SERVIDOR_EXTERNO }}"
+              const val CHAVE = "${{ secrets.CHAVE_ACESSO }}"
+          }
+          KT
+
       - name: Compilar APK (debug)
         run: gradle assembleDebug
 

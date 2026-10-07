@@ -38,7 +38,7 @@ class LoginActivity : AppCompatActivity() {
         progress = findViewById(R.id.progress)
         textErro = findViewById(R.id.textErro)
 
-        editServidor.setText(sessao.servidor)
+        editServidor.visibility = View.GONE
 
         btnEntrar.setOnClickListener {
             val login = editLogin.text.toString().trim()
@@ -47,7 +47,6 @@ class LoginActivity : AppCompatActivity() {
                 mostrarErro("Informe login e senha.")
                 return@setOnClickListener
             }
-            sessao.servidor = editServidor.text.toString()
             setCarregando(true)
             lifecycleScope.launch {
                 try {
@@ -56,7 +55,7 @@ class LoginActivity : AppCompatActivity() {
                 } catch (e: ApiException) {
                     mostrarErro(e.message ?: "Erro ao entrar.")
                 } catch (e: IOException) {
-                    mostrarErro("Não consegui conectar em ${sessao.servidor}. Confira o endereço e se o celular está na mesma rede.")
+                    mostrarErro("Não consegui conectar no servidor. Confira a internet ou o Wi-Fi do celular.")
                 } catch (e: Exception) {
                     mostrarErro("Erro: ${e.message}")
                 } finally {

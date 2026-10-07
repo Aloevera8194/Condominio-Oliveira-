@@ -31,7 +31,7 @@ class ApiClient(context: Context) {
         tipo: String = "application/json",
         autenticar: Boolean = true
     ): ByteArray {
-        val base = sessao.servidor.trim().trimEnd('/')
+        val base = RedeServidor.base()
         val con = URL("$base/api/index.php?r=$rota").openConnection() as HttpURLConnection
         try {
             con.requestMethod = metodo
