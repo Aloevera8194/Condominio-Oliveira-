@@ -56,13 +56,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         val todos = listOf(
-            Tile("Pessoas", "👥", "#0078D7", "ver_pessoas", true) { startActivity(android.content.Intent(this, PessoasActivity::class.java)) },
-            Tile("Meu apartamento", "🏠", "#00A300", "meu_apartamento", true) { startActivity(android.content.Intent(this, PessoasActivity::class.java)) },
-            Tile("Usuários", "🔑", "#9B4F96", "criar_usuario", false) { startActivity(android.content.Intent(this, UsuariosListaActivity::class.java)) },
-            Tile("Prédios", "🏢", "#008299", "gerenciar_predios", false) { startActivity(android.content.Intent(this, PrediosActivity::class.java)) },
-            Tile("Abrir porta", "🚪", "#E3A21A", "abrir_porta", false) { startActivity(android.content.Intent(this, AbrirPortaActivity::class.java)) },
-            Tile("Câmeras", "📷", "#B91D47", "ver_camera", false) { startActivity(android.content.Intent(this, CamerasActivity::class.java)) },
-            Tile("Sair", "🔒", "#555555", null, false) { confirmarSaida() }
+            Tile("Pessoas", "👥", "#59643A", "ver_pessoas", true) { startActivity(android.content.Intent(this, PessoasActivity::class.java)) },
+            Tile("Meu apartamento", "🏠", "#59643A", "meu_apartamento", true) { startActivity(android.content.Intent(this, PessoasActivity::class.java)) },
+            Tile("Usuários", "🔑", "#89965A", "criar_usuario", false) { startActivity(android.content.Intent(this, UsuariosListaActivity::class.java)) },
+            Tile("Prédios", "🏢", "#89965A", "gerenciar_predios", false) { startActivity(android.content.Intent(this, PrediosActivity::class.java)) },
+            Tile("Abrir porta", "🚪", "#59643A", "abrir_porta", false) { startActivity(android.content.Intent(this, AbrirPortaActivity::class.java)) },
+            Tile("Câmeras", "📷", "#89965A", "ver_camera", false) { startActivity(android.content.Intent(this, CamerasActivity::class.java)) },
+            Tile("Sair", "🔒", "#343D24", null, false) { confirmarSaida() }
         )
         val perms = permissoes(sessao) +
             (if (sessao.perfil == "admin") setOf("gerenciar_predios") else emptySet()) +
@@ -71,19 +71,19 @@ class MainActivity : AppCompatActivity() {
 
         val raiz = LinearLayout(this)
         raiz.orientation = LinearLayout.VERTICAL
-        raiz.setBackgroundColor(Color.BLACK)
+        raiz.setBackgroundColor(Color.parseColor("#F5F6F1"))
         raiz.setPadding(dp(8), dp(24), dp(8), dp(8))
 
         val ola = TextView(this)
         ola.text = "Olá, ${sessao.nomeUsuario}"
-        ola.setTextColor(Color.WHITE)
+        ola.setTextColor(Color.parseColor("#25291F"))
         ola.textSize = 26f
         ola.setPadding(dp(8), dp(8), dp(8), 0)
         raiz.addView(ola)
 
         val perfil = TextView(this)
         perfil.text = sessao.perfil.uppercase()
-        perfil.setTextColor(Color.parseColor("#AAAAAA"))
+        perfil.setTextColor(Color.parseColor("#59643A"))
         perfil.textSize = 13f
         perfil.setPadding(dp(8), 0, dp(8), dp(12))
         raiz.addView(perfil)
@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         pendente?.let { linha(it, null) }
 
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(Color.BLACK)
+        scroll.setBackgroundColor(Color.parseColor("#F5F6F1"))
         scroll.addView(raiz)
         setContentView(scroll)
     }

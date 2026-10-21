@@ -21,7 +21,7 @@ class PrediosActivity : AppCompatActivity() {
 
     private fun mostrar(msg: String, erro: Boolean) {
         textMsg.text = msg
-        textMsg.setTextColor(if (erro) 0xFFB00020.toInt() else 0xFF2E7D32.toInt())
+        textMsg.setTextColor(if (erro) android.graphics.Color.parseColor("#C94F49") else android.graphics.Color.parseColor("#54804B"))
         textMsg.visibility = View.VISIBLE
     }
 

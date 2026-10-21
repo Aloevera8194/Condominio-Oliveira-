@@ -28,7 +28,7 @@ class CamerasActivity : AppCompatActivity() {
 
     private fun mostrar(msg: String, erro: Boolean) {
         textMsg.text = msg
-        textMsg.setTextColor(if (erro) 0xFFB00020.toInt() else 0xFF2E7D32.toInt())
+        textMsg.setTextColor(if (erro) android.graphics.Color.parseColor("#C94F49") else android.graphics.Color.parseColor("#54804B"))
         textMsg.visibility = View.VISIBLE
     }
 
@@ -165,7 +165,7 @@ class CamerasActivity : AppCompatActivity() {
         val eStream = campo("Caminho do stream (ex: /Streaming/Channels/101)", j?.optString("caminho_stream"))
         val eSnap = campo("Caminho do snapshot (ex: /ISAPI/Streaming/channels/101/picture)", j?.optString("caminho_snapshot"))
         val cbAtivo = CheckBox(this).apply { text = "Ativa"; isChecked = j?.optBoolean("ativo", true) ?: true }
-        val tErro = TextView(this).apply { setTextColor(0xFFB00020.toInt()) }
+        val tErro = TextView(this).apply { setTextColor(android.graphics.Color.parseColor("#C94F49")) }
         listOf(eNome, eIp, ePorta, ePortaHttp, eUser, eSenha, eStream, eSnap, cbAtivo, tErro)
             .forEach { form.addView(it) }
 
