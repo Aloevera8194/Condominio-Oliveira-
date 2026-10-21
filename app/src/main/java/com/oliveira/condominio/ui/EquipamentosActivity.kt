@@ -136,9 +136,11 @@ class EquipamentosActivity : AppCompatActivity() {
         form.setPadding(dp(20), dp(12), dp(20), 0)
 
         val eNome = EditText(this).apply { hint = "Nome (ex: Portão social)"; setText(e?.nome ?: "") }
-        val tipos = listOf("Hikvision")
+        val tipos = listOf("Hikvision", "Sonoff", "Control iD")
         val spTipo = Spinner(this).apply {
             adapter = ArrayAdapter(this@EquipamentosActivity, android.R.layout.simple_spinner_dropdown_item, tipos)
+            val tipoSalvo = tipos.indexOf(e?.tipo).coerceAtLeast(0)
+            setSelection(tipoSalvo)
         }
         val eIp = EditText(this).apply { hint = "IP (vazio = IP do prédio)"; setText(e?.ip ?: "") }
         val ePorta = EditText(this).apply {
